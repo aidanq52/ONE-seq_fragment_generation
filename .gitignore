@@ -1,0 +1,13 @@
+# === Reference genome and data ===
+hg38.fa
+hg38.fa.fai
+barcode_list.txt
+
+# === Python cache ===
+__pycache__/
+*.pyc
+
+# === OS or editor-specific ===
+.DS_Store
+*.swp
+
