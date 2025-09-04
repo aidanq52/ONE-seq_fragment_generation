@@ -28,15 +28,25 @@ def deduplicate_sequences(
     cols.insert(1, cols.pop(cols.index("duplicated")))
     df = df[cols]
 
+    summary = df.groupby("mutation")["duplicated"].agg(
+        total='count',
+        unique=lambda x: (x == "no").sum()
+    ).reset_index()
+    summary['percent_unique'] = summary['unique'] / summary['total'] * 100
+
+    print("\nSummary of unique sequences per mutation:")
+    print(summary.to_string(index=False, float_format="%.2f"))
+
+
     total = len(df)
     duplicate_count = duplicated_mask.sum()
     unique_count = total - duplicate_count
 
-    print(f"Total entries: {total}")
+    print(f"\nTotal entries: {total}")
     print(f"Unique entries: {unique_count} ({(unique_count / total) * 100:.2f}%)")
     print(f"Duplicated entries: {duplicate_count} ({(duplicate_count / total) * 100:.2f}%)")
 
-    user_input = input("Perform deduplication? (y/n): ").strip().lower()
+    user_input = input("\nPerform deduplication? (y/n): ").strip().lower()
     if user_input not in {"y", "yes"}:
         print("Skipping deduplication. Using original input file.")
         return  # Exit the function, but don't kill the script
