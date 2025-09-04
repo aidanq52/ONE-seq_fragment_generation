@@ -4,6 +4,7 @@ from scripts.clean_combined_library import clean_combined_library
 from scripts.bedtools_fetching import fetch_sequences_with_bedtools
 from scripts.dedup import deduplicate_sequences
 from scripts.fragment_generation import generate_fragments
+from scripts.variant_frag import print_single_mismatch
 
 def main():
     print(" Step 1: Combining library files...")
@@ -18,7 +19,10 @@ def main():
     print("\n Step 4: Deduplicating sequences...")
     deduplicate_sequences()
 
-    print("\n Step 5: adding constant regions & barcodes...")
+    print("\n Step 5: Printing entries with 1 mismatch and 0 bulges...")
+    print_single_mismatch()
+
+    print("\n Step 6: adding constant regions & barcodes...")
     generate_fragments()
 
 

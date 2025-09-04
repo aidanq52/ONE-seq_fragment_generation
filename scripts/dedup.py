@@ -72,5 +72,5 @@ def deduplicate_sequences(
     deduplicated_df.to_csv(output_file, sep="\t", index=False)
     filtered_out_df.to_csv(filtered_out_file, sep="\t", index=False)
 
-    print(f"\n✅ Deduplicated file saved to: {output_file}")
-    print(f"🗃️ Filtered-out duplicates saved to: {filtered_out_file}")
+    print(f"\nDeduplicated file saved to: {output_file}")
+    print(f"Filtered-out duplicates saved to: {filtered_out_file}")

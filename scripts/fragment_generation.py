@@ -14,7 +14,7 @@ def generate_fragments(
     output_file=None
 ):
     if input_file is None:
-        dedup_file = "intermediate_files/4a_deduplicated_file_with_sequences.txt"
+        dedup_file = "intermediate_files/5a_pre_barcode_plus_variants.txt"
         fallback_file = "intermediate_files/3a_cleaned_file_with_sequences.txt"
         input_file = dedup_file if os.path.exists(dedup_file) else fallback_file
 
