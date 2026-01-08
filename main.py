@@ -7,17 +7,17 @@ from scripts.fragment_generation import generate_fragments
 from scripts.variant_frag import print_single_mismatch
 
 def main():
-    # print(" Step 1: Combining library files...")
-    # combine_libraries()
+    print(" Step 1: Combining library files...")
+    combine_libraries()
 
-    # print("\n Step 2: Cleaning combined library...")
-    # clean_combined_library()
+    print("\n Step 2: Cleaning combined library...")
+    clean_combined_library()
 
-    # print("\n Step 3: Fetching sequences with bedtools...")
-    # fetch_sequences_with_bedtools(fasta_file='hg38.fa')
+    print("\n Step 3: Fetching sequences with bedtools...")
+    fetch_sequences_with_bedtools(fasta_file='hg38.fa')
 
-    # print("\n Step 4: Deduplicating sequences...")
-    # deduplicate_sequences()
+    print("\n Step 4: Deduplicating sequences...")
+    deduplicate_sequences()
 
     print("\n Step 5: Printing entries with 1 or 0 mismatch and 0 bulges...")
     print_single_mismatch()
