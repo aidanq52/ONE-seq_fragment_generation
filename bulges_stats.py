@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from collections import defaultdict
 
 # Input file
-input_file = "Xi_g6_g7_g8-NNN_ONE-seq_Library.txt"
+input_file = "20260218_HC_PXE_ONE-seq-library.txt"
 
 # Load data
 df = pd.read_csv(input_file, sep="\t")

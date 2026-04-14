@@ -3,11 +3,28 @@ hg38.fa
 hg38.fa.fai
 barcode_list.txt
 
+# === Input / output data files ===
+Input_libraries/
+intermediate_files/
+temp/
+*.txt
+*.xlsx
+*.csv
+*.bed
+*.fasta
+*.fa
+*.fai
+*.png
+*.jpg
+*.jpeg
+
 # === Python cache ===
 __pycache__/
 *.pyc
+*.pyo
 
 # === OS or editor-specific ===
 .DS_Store
 *.swp
+.vscode/
 

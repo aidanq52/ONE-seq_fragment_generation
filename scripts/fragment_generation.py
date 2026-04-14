@@ -1,6 +1,9 @@
 # scripts/fragment_generation.py
 import pandas as pd
 import os
+import re
+from openpyxl.workbook.defined_name import DefinedName
+from openpyxl.utils import get_column_letter
 
 # Constants
 LEFT_PBS = "GACGTTCTCACAGCAATTCGTACAGTCGACGTCGATTCGTGT"
@@ -69,3 +72,47 @@ def generate_fragments(
 
     df.to_csv(output_file, sep='\t', index=False)
     print(f"Final annotated oligo file saved to: {output_file}")
+
+    # Write Excel workbook with two sheets: library + multi-site report
+    xlsx_file = output_file.replace(".txt", ".xlsx")
+    multi_site_file = "intermediate_files/4c_multi_site_report.csv"
+    with pd.ExcelWriter(xlsx_file, engine="openpyxl") as writer:
+        df.to_excel(writer, sheet_name="Library", index=False)
+        if os.path.exists(multi_site_file):
+            multi_df = pd.read_csv(multi_site_file)
+            multi_df.to_excel(writer, sheet_name="Multi-Site Report", index=False)
+
+            last_col = get_column_letter(len(multi_df.columns))
+
+            # Walk the Multi-Site Report rows to find each reference group's row span
+            group_spans = {}   # frag_numb -> (start_excel_row, end_excel_row)
+            current_ref = None
+            current_start = None
+            for idx, row in multi_df.iterrows():
+                excel_row = idx + 2  # +1 for header, +1 for 1-based Excel rows
+                if row["role"] == "reference":
+                    current_ref = row["frag_numb"]
+                    current_start = excel_row
+                    group_spans[current_ref] = (excel_row, excel_row)
+                elif current_ref is not None:
+                    group_spans[current_ref] = (current_start, excel_row)
+
+            # Create a named range per group so the hyperlink selects the whole block
+            wb = writer.book
+            for frag_numb, (start_row, end_row) in group_spans.items():
+                safe_name = "REF_" + re.sub(r"[^A-Za-z0-9_]", "_", frag_numb)
+                range_ref = f"'Multi-Site Report'!$A${start_row}:${last_col}${end_row}"
+                dn = DefinedName(name=safe_name, attr_text=range_ref)
+                wb.defined_names.add(dn)
+
+            # Add hyperlinks in Library sheet pointing to each group's named range
+            lib_sheet = writer.sheets["Library"]
+            for excel_row in range(2, len(df) + 2):
+                cell = lib_sheet.cell(row=excel_row, column=1)
+                if cell.value in group_spans:
+                    safe_name = "REF_" + re.sub(r"[^A-Za-z0-9_]", "_", cell.value)
+                    cell.hyperlink = f"#{safe_name}"
+                    cell.style = "Hyperlink"
+        else:
+            print(f"Warning: {multi_site_file} not found — Multi-Site Report sheet skipped.")
+    print(f"Excel workbook saved to: {xlsx_file}")

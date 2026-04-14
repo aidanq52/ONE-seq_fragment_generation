@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import glob
 from tqdm import tqdm
 import mmh3  # For hashing (pip install mmh3)
 from bitarray import bitarray  # For efficient bit storage (pip install bitarray)
@@ -8,10 +9,10 @@ from bitarray import bitarray  # For efficient bit storage (pip install bitarray
 BASES = np.array(['A', 'C', 'G', 'T'])
 BASE_TO_INT = {'A': 0, 'C': 1, 'G': 2, 'T': 3}
 INT_TO_BASE = {v: k for k, v in BASE_TO_INT.items()}
-CHECKPOINT_FILE = "barcode_checkpoint.txt"
+CHECKPOINT_FILE = "barcode_list.txt"
 
 # Bloom filter parameters
-BLOOM_SIZE = 10_000_000  # size of bit array (adjust as needed)
+BLOOM_SIZE = 100_000_000  # size of bit array (~12 MB memory)
 NUM_HASHES = 7  # number of hash functions
 
 
@@ -33,6 +34,26 @@ class BloomFilter:
 
     def __contains__(self, item):
         return all(self.bit_array[pos] for pos in self._hashes(item))
+
+
+BASES_STR = "ACGT"
+
+
+def hamming_neighbors(seq):
+    """Generate all sequences with Hamming distance 1 from seq."""
+    neighbors = []
+    for i in range(len(seq)):
+        for base in BASES_STR:
+            if base != seq[i]:
+                neighbors.append(seq[:i] + base + seq[i+1:])
+    return neighbors
+
+
+def add_barcode_to_bloom(bloom, barcode):
+    """Add a barcode and all its distance-1 neighbors to the bloom filter."""
+    bloom.add(barcode)
+    for neighbor in hamming_neighbors(barcode):
+        bloom.add(neighbor)
 
 
 def has_no_4_consecutive_same(bc):
@@ -65,13 +86,25 @@ def append_to_checkpoint(filename, buffer):
             f.write(bc + '\n')
 
 
-def generate_barcodes(n_barcodes, length=14, min_dist=2, checkpoint_every=200):
+def count_input_library_rows(input_dir="Input_libraries"):
+    total_rows = 0
+    for filepath in glob.glob(os.path.join(input_dir, "*.txt")):
+        with open(filepath, 'r') as f:
+            lines = sum(1 for line in f if line.strip())
+        total_rows += lines - 1  # subtract header
+    return total_rows
+
+
+def generate_barcodes(n_barcodes=None, length=14, min_dist=2, checkpoint_every=200):
+    if n_barcodes is None:
+        n_barcodes = (count_input_library_rows())
+        print(f"Counted {n_barcodes} rows across input library files.")
     barcodes = load_checkpoint(CHECKPOINT_FILE)
     bloom = BloomFilter()
 
-    # Rebuild bloom filter with loaded barcodes
+    # Rebuild bloom filter with loaded barcodes (including neighbors for hamming distance)
     for bc in barcodes:
-        bloom.add(bc)
+        add_barcode_to_bloom(bloom, bc)
 
     pbar = tqdm(total=n_barcodes, initial=len(barcodes), desc="Generating barcodes")
     buffer = []
@@ -89,7 +122,7 @@ def generate_barcodes(n_barcodes, length=14, min_dist=2, checkpoint_every=200):
 
         # Accept candidate
         barcodes.append(candidate)
-        bloom.add(candidate)
+        add_barcode_to_bloom(bloom, candidate)
         buffer.append(candidate)
         pbar.update(1)
 
@@ -105,7 +138,7 @@ def generate_barcodes(n_barcodes, length=14, min_dist=2, checkpoint_every=200):
 
 
 def main():
-    generate_barcodes(n_barcodes=1000000)
+    generate_barcodes(n_barcodes=2000000)
 
 
 if __name__ == "__main__":

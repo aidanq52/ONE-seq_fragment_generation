@@ -21,11 +21,22 @@ def fetch_sequences_with_bedtools(
     # Create BED dataframe
     bed_df = pd.DataFrame()
     bed_df['chrom'] = df['Chromosome']
-    bed_df['start'] = df['Location'].astype(int) - 10
+    #bed_df['start'] = df['Location'].astype(int) - 10
+    raw_start = df['Location'].astype(int) - 10
+    bed_df['start'] = raw_start.clip(lower=0)
     bed_df['end'] = df['Location'].astype(int) + 33
     bed_df['name'] = df['Frag_numb']
     bed_df['score'] = 0
     bed_df['strand'] = df['Direction']
+
+    clipped_mask = raw_start < 0
+    if clipped_mask.any():
+        clipped_entries = bed_df[clipped_mask][['chrom', 'name']].copy()
+        clipped_entries['original_start'] = raw_start[clipped_mask]
+        print(f"\n********************{clipped_mask.sum()} entries had negative start coordinates and were clipped to 0:")
+        for _, row in clipped_entries.iterrows():
+            print(f"   {row['name']} on {row['chrom']} (original start: {row['original_start']})")
+        print()
 
     bed_file = 'intermediate_files/3b_temp.bed'
     bed_df.to_csv(bed_file, sep='\t', header=False, index=False)

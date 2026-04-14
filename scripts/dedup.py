@@ -7,13 +7,18 @@ import os
 def deduplicate_sequences(
     input_file="intermediate_files/3a_cleaned_file_with_sequences.txt",
     output_file="intermediate_files/4a_deduplicated_file_with_sequences.txt",
-    filtered_out_file="intermediate_files/4b_deduplicated_removed_entries.txt"
+    filtered_out_file="intermediate_files/4b_deduplicated_removed_entries.txt",
+    priority_frag_numbs=None
 ):
     if not os.path.exists(input_file):
         sys.exit(f"❌ File not found: {input_file}")
 
     df = pd.read_csv(input_file, sep="\t", dtype=str)
     df.columns = [col.lower() for col in df.columns]
+    if priority_frag_numbs:
+        is_priority = df["frag_numb"].isin(priority_frag_numbs)
+        df = pd.concat([df[is_priority], df[~is_priority]]).reset_index(drop=True)
+
 
     required_columns = ["fetched_sequence", "mutation", "frag_numb"]
     missing_cols = [col for col in required_columns if col not in df.columns]
@@ -66,7 +71,7 @@ def deduplicate_sequences(
         else:
             prev_row = seen[seq]
             prev_mut = prev_row["mutation"]
-            if prev_mut == mutation:
+            if prev_mut == mutation or prev_mut == f"{mutation}_multi":
                 seen[seq]["mutation"] = f"{mutation}_multi"
             else:
                 # Combine different mutations with underscore
